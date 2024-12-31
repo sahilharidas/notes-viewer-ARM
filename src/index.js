@@ -1,10 +1,7 @@
-// src/index.js
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import NotesViewer from './NotesViewer';
-// import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -12,6 +9,9 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
+<<<<<<< HEAD
 
 // Register the service worker
 // serviceWorkerRegistration.register();
+=======
+>>>>>>> parent of ef2889a (Update index.js)
