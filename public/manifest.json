@@ -1,11 +1,11 @@
 {
-  "short_name": "A311Flashcards",
-  "name": "ARM Notes Viewer",
+  "short_name": "ARM Flashcards",
+  "name": "ARM Flashcards App",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
-  "description": "A simple application to view notes",
+  "description": "A simple application to view Actuarial Risk Management notes",
   "icons": [
     {
       "src": "icons/icon-192x192.png",
