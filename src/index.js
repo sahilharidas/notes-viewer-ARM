@@ -2,11 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import NotesViewer from './NotesViewer';
+import { AuthProvider } from './contexts/AuthContext';
 // import * as serviceWorkerRegistration from './serviceWorkerRegistration'; // Adjust path as necessary
 
 ReactDOM.render(
   <React.StrictMode>
-    <NotesViewer />
+    <AuthProvider>
+      <NotesViewer />
+    </AuthProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
