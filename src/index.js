@@ -7,10 +7,11 @@ import NotesViewer from './NotesViewer';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 ReactDOM.render(
- <React.StrictMode>
-   <NotesViewer />
- </React.StrictMode>,
- document.getElementById('root')
+  <React.StrictMode>
+    <NotesViewer />
+  </React.StrictMode>,
+  document.getElementById('root')
 );
 
 // Register the service worker
+serviceWorkerRegistration.register();
