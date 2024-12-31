@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Filter, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Filter, X, Search } from 'lucide-react';
 import Papa from 'papaparse';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,8 +13,9 @@ const NotesViewer = () => {
   const [error, setError] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Replace this URL with your published Google Sheet CSV URL
   const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFscVOqoOj_c05nM2zfkQU5pFoUpTTfTdmOGtEJ1gPWMPROzHrBKhHBAvzXrG1CEuZdN34uC65-VHz/pub?gid=0&single=true&output=csv';
 
   useEffect(() => {
@@ -51,15 +52,28 @@ const NotesViewer = () => {
     fetchNotes();
   }, []);
 
+  // Combined filter and search effect
   useEffect(() => {
-    if (activeFilters.length === 0) {
-      setFilteredNotes(notes);
-    } else {
-      const filtered = notes.filter(note => activeFilters.includes(note.tag));
-      setFilteredNotes(filtered);
-      setCurrentIndex(0);
+    let filtered = notes;
+    
+    // Apply tag filters
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter(note => activeFilters.includes(note.tag));
     }
-  }, [activeFilters, notes]);
+    
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(note =>
+        note.title.toLowerCase().includes(query) ||
+        note.content.toLowerCase().includes(query) ||
+        note.tag.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredNotes(filtered);
+    setCurrentIndex(0);
+  }, [activeFilters, notes, searchQuery]);
 
   const uniqueTags = [...new Set(notes.map(note => note.tag))];
 
@@ -71,17 +85,26 @@ const NotesViewer = () => {
 
   const clearFilters = () => {
     setActiveFilters([]);
+    setSearchQuery('');
   };
 
   const goToNext = () => {
     if (currentIndex < filteredNotes.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setIsTransitioning(false);
+      }, 300);
     }
   };
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex - 1);
+        setIsTransitioning(false);
+      }, 300);
     }
   };
 
@@ -94,7 +117,6 @@ const NotesViewer = () => {
       }
     };
     window.addEventListener('keydown', handleKeyPress);
-
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentIndex]);
 
@@ -116,26 +138,47 @@ const NotesViewer = () => {
 
   if (filteredNotes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
         <div className="text-xl text-gray-600">
-          {notes.length === 0 ? "No notes found. Add some to your Google Sheet!" : "No notes match your selected filters."}
+          {notes.length === 0 ? "No notes found. Add some to your Google Sheet!" : "No notes match your selected filters or search."}
         </div>
+        {(activeFilters.length > 0 || searchQuery) && (
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2"
+          >
+            <X size={16} /> Clear all filters
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
-      {/* Filter UI */}
-      <div className="w-full max-w-md mb-4">
+      {/* Search and Filter UI */}
+      <div className="w-full max-w-md mb-4 space-y-2">
+        {/* Search bar */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 pl-10 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+        </div>
+
+        {/* Filter button and panel */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:bg-gray-50"
+          className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 w-full"
         >
           <Filter size={20} /> {showFilters ? 'Hide Filters' : 'Show Filters'}
         </button>
         {showFilters && (
-          <div className="mt-2 p-4 bg-white rounded-lg shadow-sm">
+          <div className="p-4 bg-white rounded-lg shadow-sm">
             <div className="flex flex-wrap gap-2">
               {uniqueTags.map(tag => (
                 <button
@@ -148,12 +191,12 @@ const NotesViewer = () => {
                   {tag}
                 </button>
               ))}
-              {activeFilters.length > 0 && (
+              {(activeFilters.length > 0 || searchQuery) && (
                 <button
                   onClick={clearFilters}
                   className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700 flex items-center gap-1"
                 >
-                  <X size={14} /> Clear
+                  <X size={14} /> Clear all
                 </button>
               )}
             </div>
@@ -167,16 +210,19 @@ const NotesViewer = () => {
           {currentIndex + 1} / {filteredNotes.length}
         </div>
 
-        {/* Main content card */}
+        {/* Main content card with transition */}
         <div className="w-full aspect-[9/16] bg-white shadow-lg relative overflow-hidden rounded-lg">
-          <div className="h-full flex flex-col items-center p-6 overflow-y-auto">
+          <div 
+            className={`h-full flex flex-col items-center p-6 overflow-y-auto transition-opacity duration-300 ${
+              isTransitioning ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
             <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-4">
               {filteredNotes[currentIndex].tag}
             </span>
             <h2 className="text-2xl font-bold mb-4">
               {filteredNotes[currentIndex].title}
             </h2>
-            {/* Image (if present) */}
             {filteredNotes[currentIndex].imageUrl && (
               <img
                 src={filteredNotes[currentIndex].imageUrl}
@@ -187,7 +233,6 @@ const NotesViewer = () => {
                 }}
               />
             )}
-            {/* Markdown content */}
             <div className="prose prose-sm w-full">
               <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-left">
                 {filteredNotes[currentIndex].content}
