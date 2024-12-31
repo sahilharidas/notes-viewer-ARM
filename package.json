@@ -17,7 +17,7 @@
      "react-markdown": "^7.0.0",
      "remark-gfm": "^3.0.0",
      "react-scripts": "5.0.1"
-   }
+   },
   "devDependencies": {},
   "browserslist": {
     "production": [
