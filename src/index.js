@@ -9,7 +9,6 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
-<<<<<<< HEAD
 
 // Register the service worker
 // serviceWorkerRegistration.register();
