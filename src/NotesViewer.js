@@ -1,119 +1,114 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Filter, X, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Menu, Search, X, Home, BookOpen } from 'lucide-react';
 import Papa from 'papaparse';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const NotesViewer = () => {
-  const [notes, setNotes] = useState([]);
-  const [filteredNotes, setFilteredNotes] = useState([]);
+const ChapterViewer = () => {
+  const [chapters, setChapters] = useState([]);
+  const [filteredChapters, setFilteredChapters] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef(null);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
-  const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFscVOqoOj_c05nM2zfkQU5pFoUpTTfTdmOGtEJ1gPWMPROzHrBKhHBAvzXrG1CEuZdN34uC65-VHz/pub?gid=0&single=true&output=csv';
+  const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_URL/pub?output=csv';
+
+  // Touch swipe handling
+  const handleTouchStart = (e) => setTouchStart(e.touches[0].clientX);
+  const handleTouchMove = (e) => setTouchEnd(e.touches[0].clientX);
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && currentIndex < filteredChapters.length - 1) {
+      goToNext();
+    }
+    if (isRightSwipe && currentIndex > 0) {
+      goToPrevious();
+    }
+    setTouchEnd(null);
+    setTouchStart(null);
+  };
 
   useEffect(() => {
-    const fetchNotes = async () => {
+    const fetchChapters = async () => {
       try {
         const response = await fetch(SHEETS_URL);
         const text = await response.text();
         Papa.parse(text, {
           header: true,
           complete: (results) => {
-            const validNotes = results.data
-              .filter(note => note.title && note.content)
-              .map((note, index) => ({
+            const validChapters = results.data
+              .filter(chapter => chapter.title && chapter.content)
+              .map((chapter, index) => ({
                 id: index + 1,
-                title: note.title,
-                content: note.content,
-                tag: note.tag || 'Untagged',
-                imageUrl: note.imageUrl || null
+                title: chapter.title,
+                content: chapter.content,
+                tag: chapter.tag || 'Chapter',
+                imageUrl: chapter.imageUrl || null
               }));
-            setNotes(validNotes);
-            setFilteredNotes(validNotes);
+            setChapters(validChapters);
+            setFilteredChapters(validChapters);
             setLoading(false);
           },
           error: (error) => {
-            setError('Failed to parse notes');
+            setError('Failed to parse chapters');
             setLoading(false);
           }
         });
       } catch (err) {
-        setError('Failed to fetch notes');
+        setError('Failed to fetch chapters');
         setLoading(false);
       }
     };
-    fetchNotes();
+    fetchChapters();
   }, []);
 
-  // Combined filter and search effect
   useEffect(() => {
-    let filtered = notes;
-    
-    // Apply tag filters
-    if (activeFilters.length > 0) {
-      filtered = filtered.filter(note => activeFilters.includes(note.tag));
-    }
-    
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(note =>
-        note.title.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query) ||
-        note.tag.toLowerCase().includes(query)
-      );
-    }
-    
-    setFilteredNotes(filtered);
-    setCurrentIndex(0);
-  }, [activeFilters, notes, searchQuery]);
-
-  const uniqueTags = [...new Set(notes.map(note => note.tag))];
-
-  const toggleFilter = (tag) => {
-    setActiveFilters(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    const filtered = chapters.filter(chapter =>
+      chapter.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      chapter.content.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  };
-
-  const clearFilters = () => {
-    setActiveFilters([]);
-    setSearchQuery('');
-  };
+    setFilteredChapters(filtered);
+  }, [searchQuery, chapters]);
 
   const goToNext = () => {
-    if (currentIndex < filteredNotes.length - 1) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentIndex(currentIndex + 1);
-        setIsTransitioning(false);
-      }, 300);
+    if (currentIndex < filteredChapters.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsDrawerOpen(false);
     }
   };
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentIndex(currentIndex - 1);
-        setIsTransitioning(false);
-      }, 300);
+      setCurrentIndex(currentIndex - 1);
+      setIsDrawerOpen(false);
     }
   };
 
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if (e.key === 'ArrowUp') {
-        goToPrevious();
-      } else if (e.key === 'ArrowDown') {
+      if (e.key === '/') {
+        e.preventDefault();
+        setShowSearch(true);
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape') {
+        setShowSearch(false);
+        setSearchQuery('');
+        setIsDrawerOpen(false);
+      } else if (e.key === 'ArrowRight') {
         goToNext();
+      } else if (e.key === 'ArrowLeft') {
+        goToPrevious();
       }
     };
     window.addEventListener('keydown', handleKeyPress);
@@ -122,81 +117,66 @@ const NotesViewer = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl text-gray-600">Loading your notes...</div>
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-xl text-gray-600">Loading chapters...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-xl text-red-600">{error}</div>
       </div>
     );
   }
 
-  if (filteredNotes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <div className="text-xl text-gray-600">
-          {notes.length === 0 ? "No notes found. Add some to your Google Sheet!" : "No notes match your selected filters or search."}
-        </div>
-        {(activeFilters.length > 0 || searchQuery) && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2"
-          >
-            <X size={16} /> Clear all filters
-          </button>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
-      {/* Search and Filter UI */}
-      <div className="w-full max-w-md mb-4 space-y-2">
-        {/* Search bar */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+    <div 
+      className="flex flex-col h-screen bg-gray-50 overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-50 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu size={24} />
+          </button>
+          <div className="text-lg font-semibold truncate px-2">
+            Chapter {currentIndex + 1}
+          </div>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <Search size={24} />
+          </button>
         </div>
-
-        {/* Filter button and panel */}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 w-full"
-        >
-          <Filter size={20} /> {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </button>
-        {showFilters && (
-          <div className="p-4 bg-white rounded-lg shadow-sm">
-            <div className="flex flex-wrap gap-2">
-              {uniqueTags.map(tag => (
+        
+        {/* Search Bar */}
+        {showSearch && (
+          <div className="px-4 py-2 border-t">
+            <div className="relative">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search chapters..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 pl-10 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              {searchQuery && (
                 <button
-                  key={tag}
-                  onClick={() => toggleFilter(tag)}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    activeFilters.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
-                  }`}
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-gray-400"
                 >
-                  {tag}
-                </button>
-              ))}
-              {(activeFilters.length > 0 || searchQuery) && (
-                <button
-                  onClick={clearFilters}
-                  className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700 flex items-center gap-1"
-                >
-                  <X size={14} /> Clear all
+                  <X size={20} />
                 </button>
               )}
             </div>
@@ -204,67 +184,90 @@ const NotesViewer = () => {
         )}
       </div>
 
-      <div className="w-full max-w-md h-full flex flex-col items-center justify-center gap-4">
-        {/* Navigation indicator */}
-        <div className="text-sm text-gray-500">
-          {currentIndex + 1} / {filteredNotes.length}
-        </div>
-
-        {/* Main content card with transition */}
-        <div className="w-full aspect-[9/16] bg-white shadow-lg relative overflow-hidden rounded-lg">
-          <div 
-            className={`h-full flex flex-col items-center p-6 overflow-y-auto transition-opacity duration-300 ${
-              isTransitioning ? 'opacity-0' : 'opacity-100'
-            }`}
-          >
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-4">
-              {filteredNotes[currentIndex].tag}
-            </span>
-            <h2 className="text-2xl font-bold mb-4">
-              {filteredNotes[currentIndex].title}
-            </h2>
-            {filteredNotes[currentIndex].imageUrl && (
-              <img
-                src={filteredNotes[currentIndex].imageUrl}
-                alt={filteredNotes[currentIndex].title}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-                onError={(e) => {
-                  e.target.style.display = 'none';
+      {/* Chapter Navigation Drawer */}
+      <div 
+        className={`fixed inset-y-0 left-0 transform ${
+          isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+        } w-64 bg-white shadow-lg transition-transform duration-200 ease-in-out z-50`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">Chapters</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {filteredChapters.map((chapter, index) => (
+              <button
+                key={chapter.id}
+                onClick={() => {
+                  setCurrentIndex(index);
+                  setIsDrawerOpen(false);
                 }}
-              />
-            )}
-            <div className="prose prose-sm w-full">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-left">
-                {filteredNotes[currentIndex].content}
-              </ReactMarkdown>
-            </div>
+                className={`w-full px-4 py-3 text-left hover:bg-gray-100 ${
+                  index === currentIndex ? 'bg-blue-50 text-blue-600' : ''
+                }`}
+              >
+                <div className="font-medium">Chapter {index + 1}</div>
+                <div className="text-sm text-gray-600 truncate">
+                  {chapter.title}
+                </div>
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Navigation controls */}
-        <div className="flex flex-col gap-2">
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">
+            {filteredChapters[currentIndex].title}
+          </h1>
+          <div className="prose prose-sm sm:prose max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {filteredChapters[currentIndex].content}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <div className="sticky bottom-0 bg-white border-t shadow-lg">
+        <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={goToPrevious}
             disabled={currentIndex === 0}
-            className={`p-2 rounded-full ${
-              currentIndex === 0 ? 'text-gray-300' : 'text-gray-600 hover:text-gray-800'
+            className={`p-2 rounded-lg ${
+              currentIndex === 0 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            <ChevronUp size={24} />
+            <ChevronLeft size={24} />
           </button>
+          <div className="text-sm text-gray-600">
+            {currentIndex + 1} / {filteredChapters.length}
+          </div>
           <button
             onClick={goToNext}
-            disabled={currentIndex === filteredNotes.length - 1}
-            className={`p-2 rounded-full ${
-              currentIndex === filteredNotes.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:text-gray-800'
+            disabled={currentIndex === filteredChapters.length - 1}
+            className={`p-2 rounded-lg ${
+              currentIndex === filteredChapters.length - 1 
+                ? 'text-gray-300' 
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            <ChevronDown size={24} />
+            <ChevronRight size={24} />
           </button>
         </div>
       </div>
+
+      {/* Overlay for drawer */}
+      {isDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsDrawerOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
-export default NotesViewer;
+export default ChapterViewer;
