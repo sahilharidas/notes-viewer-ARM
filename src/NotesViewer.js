@@ -18,7 +18,7 @@ const ChapterViewer = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
-  const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_URL/pub?output=csv';
+  const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFscVOqoOj_c05nM2zfkQU5pFoUpTTfTdmOGtEJ1gPWMPROzHrBKhHBAvzXrG1CEuZdN34uC65-VHz/pub?gid=0&single=true&output=csv';
 
   // Touch swipe handling
   const handleTouchStart = (e) => setTouchStart(e.touches[0].clientX);
