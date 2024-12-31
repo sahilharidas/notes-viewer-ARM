@@ -15,7 +15,7 @@ const NotesViewer = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   // Replace this URL with your published Google Sheet CSV URL
-  const SHEETS_URL = 'YOUR_GOOGLE_SHEETS_URL';
+  const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFscVOqoOj_c05nM2zfkQU5pFoUpTTfTdmOGtEJ1gPWMPROzHrBKhHBAvzXrG1CEuZdN34uC65-VHz/pub?gid=0&single=true&output=csv';
 
   useEffect(() => {
     const fetchNotes = async () => {
