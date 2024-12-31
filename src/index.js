@@ -14,4 +14,4 @@ ReactDOM.render(
 );
 
 // Register the service worker
-serviceWorkerRegistration.register();
+// serviceWorkerRegistration.register();
