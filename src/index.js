@@ -13,5 +13,3 @@ ReactDOM.render(
 
 // Register the service worker
 // serviceWorkerRegistration.register();
-=======
->>>>>>> parent of ef2889a (Update index.js)
