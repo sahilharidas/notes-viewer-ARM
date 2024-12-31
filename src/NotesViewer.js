@@ -1,6 +1,6 @@
-"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Search, X, Home, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Search, X } from 'lucide-react';
 import Papa from 'papaparse';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -20,7 +20,6 @@ const ChapterViewer = () => {
 
   const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFscVOqoOj_c05nM2zfkQU5pFoUpTTfTdmOGtEJ1gPWMPROzHrBKhHBAvzXrG1CEuZdN34uC65-VHz/pub?gid=0&single=true&output=csv';
 
-  // Touch swipe handling
   const handleTouchStart = (e) => setTouchStart(e.touches[0].clientX);
   const handleTouchMove = (e) => setTouchEnd(e.touches[0].clientX);
   const handleTouchEnd = () => {
@@ -117,29 +116,28 @@ const ChapterViewer = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-xl text-gray-600">Loading chapters...</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+        <div className="text-2xl text-white animate-pulse">Loading chapters...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-xl text-red-600">{error}</div>
+      <div className="flex items-center justify-center h-screen bg-red-500">
+        <div className="text-2xl text-white">{error}</div>
       </div>
     );
   }
 
   return (
     <div 
-      className="flex flex-col h-screen bg-gray-50 overflow-hidden"
+      className="flex flex-col h-screen bg-gradient-to-r from-cyan-500 to-blue-500 overflow-hidden text-white"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top Navigation Bar */}
-      <div className="sticky top-0 z-50 bg-white shadow-sm">
+      <div className="sticky top-0 z-50 bg-opacity-80 bg-white text-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => setIsDrawerOpen(!isDrawerOpen)}
@@ -147,7 +145,7 @@ const ChapterViewer = () => {
           >
             <Menu size={24} />
           </button>
-          <div className="text-lg font-semibold truncate px-2">
+          <div className="text-lg font-bold truncate px-2">
             Chapter {currentIndex + 1}
           </div>
           <button
@@ -158,7 +156,6 @@ const ChapterViewer = () => {
           </button>
         </div>
         
-        {/* Search Bar */}
         {showSearch && (
           <div className="px-4 py-2 border-t">
             <div className="relative">
@@ -184,11 +181,10 @@ const ChapterViewer = () => {
         )}
       </div>
 
-      {/* Chapter Navigation Drawer */}
       <div 
         className={`fixed inset-y-0 left-0 transform ${
           isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
-        } w-64 bg-white shadow-lg transition-transform duration-200 ease-in-out z-50`}
+        } w-64 bg-white text-gray-900 shadow-lg transition-transform duration-200 ease-in-out z-50`}
       >
         <div className="flex flex-col h-full">
           <div className="p-4 border-b">
@@ -203,7 +199,7 @@ const ChapterViewer = () => {
                   setIsDrawerOpen(false);
                 }}
                 className={`w-full px-4 py-3 text-left hover:bg-gray-100 ${
-                  index === currentIndex ? 'bg-blue-50 text-blue-600' : ''
+                  index === currentIndex ? 'bg-blue-100 text-blue-600' : ''
                 }`}
               >
                 <div className="font-medium">Chapter {index + 1}</div>
@@ -216,13 +212,12 @@ const ChapterViewer = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="text-3xl font-bold mb-4">
             {filteredChapters[currentIndex].title}
           </h1>
-          <div className="prose prose-sm sm:prose max-w-none">
+          <div className="prose prose-sm sm:prose max-w-none text-white">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {filteredChapters[currentIndex].content}
             </ReactMarkdown>
@@ -230,8 +225,7 @@ const ChapterViewer = () => {
         </div>
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <div className="sticky bottom-0 bg-white border-t shadow-lg">
+      <div className="sticky bottom-0 bg-white border-t shadow-lg text-gray-900">
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={goToPrevious}
@@ -242,7 +236,7 @@ const ChapterViewer = () => {
           >
             <ChevronLeft size={24} />
           </button>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm">
             {currentIndex + 1} / {filteredChapters.length}
           </div>
           <button
@@ -259,7 +253,6 @@ const ChapterViewer = () => {
         </div>
       </div>
 
-      {/* Overlay for drawer */}
       {isDrawerOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
